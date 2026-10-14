@@ -12,7 +12,6 @@ typedef struct User {
 	char Username[20];
 	time_t loginTime;
 	struct tm localLoginTime;
-	unsigned char* prevHash;
 	struct User* next;
 	struct Digest hash;
 };

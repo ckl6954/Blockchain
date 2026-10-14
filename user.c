@@ -6,25 +6,28 @@
 
 struct User* add(struct User * head, char* Username) {
 	Sleep((rand() % 10 + 1) * 1000);
-
 	struct User* newHead = (struct User*)malloc(sizeof(struct User));
 	strcpy(newHead->Username, Username);
 	time(&(newHead->loginTime));
 	newHead->localLoginTime = *localtime(&(newHead->loginTime));
-    newHead->next = head; // Incorrectly linking a newly created node into the list
+    newHead->next = NULL;  
     if (head == NULL) {
         newHead->hash.hash0 = 0;
         newHead->hash.hash1 = 0;
         newHead->hash.hash2 = 0;
         newHead->hash.hash3 = 0;
         newHead->hash.hash4 = 0;
+        return newHead;
     }
-    else {
-       
-        generateDigest(&(newHead->hash), head); // Calculating or storing a hash for the wrong node
+    //this whole logic was wrong i had to redo it to what it is now. 
+    struct User* tail = head;
+    while (tail->next != NULL) {
+        tail = tail->next;
     }
+    tail->next = newHead;
+    generateDigest(&(newHead->hash), tail);  
     
-    return newHead; // Returning the wrong pointer
+    return head;
 }
 
 void printLog(struct User* head) {
@@ -63,70 +66,63 @@ void printUser(struct User* user) {
 
 
 void generateDigest(struct Digest* digest, struct User* User) {
-    unsigned char* result = SSHA((unsigned char*)User, STRUCT_SIZE); // Calculating or storing a hash for the wrong node
-    digest->hash0 = result[1]; // Incorrectly updating the hash value
-    digest->hash1 = result[2];
-    digest->hash2 = result[3];
-    digest->hash3 = result[4];
-    digest->hash4 = result[5];
+    unsigned char* result = SSHA((unsigned char*)User, STRUCT_SIZE); // Calculating or storing a hash for the wrong node (idk if this is an issue i dont think so)
+    digest->hash0 = result[0]; //shifted these by one so its correct
+    digest->hash1 = result[1];
+    digest->hash2 = result[2];
+    digest->hash3 = result[3];
+    digest->hash4 = result[4];
+    free(result);
 }
 void verify(struct User* curr) {
     int height = 2;
 
     printf("******** Verifying Log *********\n\n");
 
-    struct Block* prev = NULL;
-    if (curr != NULL) {
-        prev = curr; // Updating the wrong next pointer
-    }
+    //fixed starting node
+    struct User* next = curr->next;
 
     printf("User 1, impossible to verify\n");
     printf("\t%-20s", "User Data:");
     printUser(curr);
-    printf("\n");
-
-    while (prev) {
-        unsigned char* computedHash = NULL;
-
-        if (prev != NULL) {
-            struct Digest prev_digest_computed;
-            generateDigest(&prev_digest_computed, curr); // Comparing a block against the wrong previous or next block
-
-            if (digest_equal(prev_digest_computed, curr->hash)) {
-                printf("User %d passed\n", height);
-                printf("\t%-20s", "User Data:");
-                printUser(curr);
-                printf("\t%-20s", "Saved Hash:");
-                printDigest(curr->hash);
-                printf("\t%-20s", "Calculated Hash:");
-                printDigest(prev_digest_computed);
-                printf("\n\n");
-            }
-            else {
-                printf("User %d failed\n", height);
-                printf("\t%-20s", "User Data:");
-                printUser(curr);
-                printf("\t%-20s", "Saved Hash:");
-                printDigest(curr->hash);
-                printf("\t%-20s", "Calculated Hash:");
-                printDigest(prev_digest_computed);
-                printf("\n\n");
-                return;
-            }
-        }
-        curr = prev; // Incorrect traversal logic that skips nodes or processes the wrong node
-        prev = curr->next;
-        height++;
-    }
-
-    printf("User %d, nothing to verify\n", height);
-
-    printf("\t%-20s", "User Data:");
-    printUser(curr);
-
     printf("\t%-20s", "Saved Hash:");
     printDigest(curr->hash);
-    printf("\n\n");
+    printf("\n");
+
+    while (next != NULL) { // fixed loop
+        // unsigned char* computedHash = NULL; like what is it thinking i just gotta know
+
+       
+        struct Digest prev_digest_computed;
+        generateDigest(&prev_digest_computed, curr); // Comparing a block against the right block 
+
+        if (digest_equal(prev_digest_computed, next->hash)) {
+            printf("User %d passed\n", height);
+            printf("\t%-20s", "User Data:");
+            printUser(next);
+            printf("\t%-20s", "Saved Hash:");
+            printDigest(next->hash);
+            printf("\t%-20s", "Calculated Hash:");
+            printDigest(prev_digest_computed);
+            printf("\n\n");
+        }
+        else {
+            printf("User %d failed\n", height);
+            printf("\t%-20s", "User Data:");
+            printUser(next);
+            printf("\t%-20s", "Saved Hash:");
+            printDigest(next->hash);
+            printf("\t%-20s", "Calculated Hash:");
+            printDigest(prev_digest_computed);
+            printf("\n\n");
+            return;
+        }
+        
+        curr = next; // correct traversal logic that does not skip nodes or processes the wrong node
+        next = curr->next;
+        height++;
+    }
+    //had to get rid of the nothing to verify, does not make any sense
 
     printf("**********************************\n");
     printf("* All blocks have been verified. *\n");
