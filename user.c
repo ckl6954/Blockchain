@@ -66,7 +66,7 @@ void printUser(struct User* user) {
 
 
 void generateDigest(struct Digest* digest, struct User* User) {
-    unsigned char* result = SSHA((unsigned char*)User, STRUCT_SIZE); // Calculating or storing a hash for the wrong node (idk if this is an issue i dont think so)
+    unsigned char* result = SSHA2((unsigned char*)User, STRUCT_SIZE); // Calculating or storing a hash for the wrong node (idk if this is an issue i dont think so)
     digest->hash0 = result[0]; //shifted these by one so its correct
     digest->hash1 = result[1];
     digest->hash2 = result[2];
